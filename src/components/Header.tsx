@@ -2,18 +2,26 @@
 import { useState, useEffect } from 'react';
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
 
   // Function to handle smooth scrolling
   const scrollToSection = (sectionId: string) => {
     setIsOpen(false);
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    if (isHomePage) {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // If not on home page, navigate to home page and then scroll to section
+      window.location.href = `/#${sectionId}`;
     }
   };
 
@@ -29,15 +37,18 @@ const Header = () => {
         setScrolled(false);
       }
       
-      // Determine active section for nav highlighting
-      const sections = ['hero', 'about', 'products', 'contact'];
-      for (const section of sections) {
-        const element = document.getElementById(section);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top <= 100 && rect.bottom >= 100) {
-            setActiveSection(section);
-            break;
+      // Only detect active section on home page
+      if (isHomePage) {
+        // Determine active section for nav highlighting
+        const sections = ['hero', 'about', 'products', 'contact'];
+        for (const section of sections) {
+          const element = document.getElementById(section);
+          if (element) {
+            const rect = element.getBoundingClientRect();
+            if (rect.top <= 100 && rect.bottom >= 100) {
+              setActiveSection(section);
+              break;
+            }
           }
         }
       }
@@ -45,7 +56,7 @@ const Header = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isHomePage]);
 
   const navLinks = [
     { id: 'about', label: 'About' },
@@ -63,24 +74,29 @@ const Header = () => {
       <div className="container mx-auto px-4 md:px-6 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center">
-          <a 
-            href="#hero" 
-            onClick={(e) => {
-              e.preventDefault();
-              scrollToSection('hero');
-            }}
-            className="flex items-center"
-          >
+          <Link to="/" className="flex items-center">
             <img 
               src="/placeholder.svg" 
               alt="Super Fine Industries Logo" 
               className="h-12 md:h-14"
             />
-          </a>
+          </Link>
         </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
+          {/* Static link to Catalog page */}
+          <Link 
+            to="/catalog"
+            className={cn(
+              "nav-link text-base font-medium hover:text-brand-blue transition-colors",
+              location.pathname === '/catalog' ? "text-brand-blue" : ""
+            )}
+          >
+            Catalog
+          </Link>
+          
+          {/* Home page section links */}
           {navLinks.map((link) => (
             <a
               key={link.id}
@@ -91,7 +107,7 @@ const Header = () => {
               }}
               className={cn(
                 "nav-link text-base font-medium hover:text-brand-blue transition-colors",
-                activeSection === link.id ? "active" : ""
+                isHomePage && activeSection === link.id ? "active" : ""
               )}
             >
               {link.label}
@@ -113,6 +129,19 @@ const Header = () => {
       {isOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-white shadow-md py-4 animate-fade-in">
           <nav className="container mx-auto px-4 flex flex-col space-y-4">
+            {/* Static link to Catalog page */}
+            <Link
+              to="/catalog"
+              onClick={() => setIsOpen(false)}
+              className={cn(
+                "text-lg py-2 border-b border-gray-100",
+                location.pathname === '/catalog' ? "text-brand-blue" : "text-gray-800"
+              )}
+            >
+              Catalog
+            </Link>
+            
+            {/* Home page section links */}
             {navLinks.map((link) => (
               <a
                 key={link.id}
@@ -123,7 +152,7 @@ const Header = () => {
                 }}
                 className={cn(
                   "text-lg py-2 border-b border-gray-100",
-                  activeSection === link.id ? "text-brand-blue" : "text-gray-800"
+                  isHomePage && activeSection === link.id ? "text-brand-blue" : "text-gray-800"
                 )}
               >
                 {link.label}
