@@ -26,20 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Skip Supabase auth if client isn't available
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
@@ -48,20 +35,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
     return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    try {
-      if (!supabase) {
-        toast({
-          variant: "destructive",
-          title: "Authentication unavailable",
-          description: "Supabase client is not initialized. Please check your environment variables.",
-        });
-        return { data: null, error: new Error("Supabase client is not initialized") };
-      }
-      
+    try {      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -78,15 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      if (!supabase) {
-        toast({
-          variant: "destructive",
-          title: "Authentication unavailable",
-          description: "Supabase client is not initialized. Please check your environment variables.",
-        });
-        return;
-      }
-      
       await supabase.auth.signOut();
       navigate('/admin');
     } catch (error) {
