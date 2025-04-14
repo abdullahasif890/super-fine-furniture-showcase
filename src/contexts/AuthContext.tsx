@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { supabase } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/components/ui/use-toast';
 
 type AuthContextType = {
   session: Session | null;
@@ -22,8 +23,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
+    // Skip Supabase auth if client isn't available
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -45,6 +53,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      if (!supabase) {
+        toast({
+          variant: "destructive",
+          title: "Authentication unavailable",
+          description: "Supabase client is not initialized. Please check your environment variables.",
+        });
+        return { data: null, error: new Error("Supabase client is not initialized") };
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -61,10 +78,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
+      if (!supabase) {
+        toast({
+          variant: "destructive",
+          title: "Authentication unavailable",
+          description: "Supabase client is not initialized. Please check your environment variables.",
+        });
+        return;
+      }
+      
       await supabase.auth.signOut();
       navigate('/admin');
     } catch (error) {
       console.error('Error signing out:', error);
+      toast({
+        variant: "destructive",
+        title: "Sign out failed",
+        description: "An error occurred while signing out.",
+      });
     }
   };
 
