@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,13 +26,11 @@ import {
 import { HexColorPicker } from "react-colorful";
 import { ArrowLeft, Check, Plus, Trash, Upload, X } from "lucide-react";
 
-// Define color type
 type ProductColor = {
   name: string;
   value: string;
 };
 
-// Form schema
 const productSchema = z.object({
   code: z.string().min(1, "Product code is required"),
   name: z.string().min(1, "Product name is required"),
@@ -69,13 +66,31 @@ const ProductForm = ({ product, onClose }: ProductFormProps) => {
     },
   });
 
+  useEffect(() => {
+    if (!supabase) {
+      toast({
+        variant: "destructive",
+        title: "Supabase not configured",
+        description: "Some functionality will be limited",
+      });
+    }
+  }, [toast]);
+
   const onSubmit = async (values: ProductFormValues) => {
+    if (!supabase) {
+      toast({
+        variant: "destructive",
+        title: "Cannot save product",
+        description: "Supabase client is not available",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
       let finalImageUrl = imageUrl;
 
-      // Handle image upload if there's a new image
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
@@ -87,7 +102,6 @@ const ProductForm = ({ product, onClose }: ProductFormProps) => {
 
         if (uploadError) throw uploadError;
 
-        // Get the public URL
         const { data: { publicUrl } } = supabase.storage
           .from('product-images')
           .getPublicUrl(filePath);
@@ -105,7 +119,6 @@ const ProductForm = ({ product, onClose }: ProductFormProps) => {
       };
 
       if (product) {
-        // Update existing product
         const { error } = await supabase
           .from('products')
           .update(productData)
@@ -118,7 +131,6 @@ const ProductForm = ({ product, onClose }: ProductFormProps) => {
           description: "The product has been successfully updated",
         });
       } else {
-        // Create new product
         const { error } = await supabase
           .from('products')
           .insert([productData]);
@@ -152,7 +164,6 @@ const ProductForm = ({ product, onClose }: ProductFormProps) => {
     const file = e.target.files[0];
     setImageFile(file);
     
-    // Create a preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setImageUrl(reader.result as string);

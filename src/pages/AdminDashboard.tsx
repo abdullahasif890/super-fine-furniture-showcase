@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,7 +23,16 @@ const AdminDashboard = () => {
     if (!user) {
       navigate("/admin");
     }
-  }, [user, navigate]);
+    
+    // Check if Supabase is configured
+    if (!supabase) {
+      toast({
+        variant: "destructive",
+        title: "Supabase not configured",
+        description: "Please check your environment variables",
+      });
+    }
+  }, [user, navigate, toast]);
 
   const handleAddNewClick = () => {
     setEditingProduct(null);

@@ -47,6 +47,17 @@ const ProductsList = ({ onEditProduct }: ProductsListProps) => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      
+      if (!supabase) {
+        toast({
+          variant: "destructive",
+          title: "Supabase client not available",
+          description: "Check your environment variables and refresh the page",
+        });
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from("products")
         .select("*")
@@ -79,7 +90,7 @@ const ProductsList = ({ onEditProduct }: ProductsListProps) => {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!productToDelete) return;
+    if (!productToDelete || !supabase) return;
 
     try {
       const { error } = await supabase
