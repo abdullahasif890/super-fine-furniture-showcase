@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
+// Modified schema to ensure title is required
 const noteSchema = z.object({
   title: z.string().min(1, "Title is required"),
   content: z.string().optional(),
@@ -35,7 +36,11 @@ const Notes = () => {
 
   const onSubmit = async (values: NoteForm) => {
     try {
-      await addNote(values);
+      // Ensure we're passing the required title
+      await addNote({
+        title: values.title,
+        content: values.content || "" // Provide a default empty string
+      });
       toast({ title: "Note added", description: "Your note has been saved." });
       form.reset();
     } catch (err) {

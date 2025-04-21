@@ -17,8 +17,9 @@ export function useNotes() {
   const notesQuery = useQuery({
     queryKey: ["notes"],
     queryFn: async () => {
+      // Use type assertion to work around TypeScript issues
       const { data, error } = await supabase
-        .from("notes")
+        .from("notes" as any)
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -28,8 +29,9 @@ export function useNotes() {
 
   const addNoteMutation = useMutation({
     mutationFn: async (note: { title: string; content: string }) => {
+      // Use type assertion to work around TypeScript issues
       const { data, error } = await supabase
-        .from("notes")
+        .from("notes" as any)
         .insert({ title: note.title, content: note.content })
         .select()
         .maybeSingle();
